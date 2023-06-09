@@ -1,4 +1,4 @@
-![progress-banner](https://codecrafters.io/landing/images/default_progress_banners/docker.png)
+[![progress-banner](https://app.codecrafters.io/progress/docker/c4f02c39-77e4-4dd7-938a-f90a14f844af)](https://app.codecrafters.io/users/kudojp)
 
 This is a starting point for Ruby solutions to the
 ["Build Your Own Docker" Challenge](https://codecrafters.io/challenges/docker).
