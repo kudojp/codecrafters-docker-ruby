@@ -10,3 +10,4 @@ return if docker_command != 'run'
 stdout, stderr, status = Open3.capture3(command, *command_args)
 $stdout.puts stdout
 $stderr.puts stderr
+exit status.exitstatus
