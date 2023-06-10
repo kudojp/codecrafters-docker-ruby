@@ -5,7 +5,7 @@ build:
 	docker build -t mydocker .
 
 .PHONY: run
-run:
+run: build
 	$(mydocker) run ubuntu:latest /usr/local/bin/docker-explorer echo hey
 
 .PHONY: get-docker-explorers
