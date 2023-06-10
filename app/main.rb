@@ -1,14 +1,12 @@
 require "open3"
 
-# You can use print statements as follows for debugging, they'll be visible when running tests.
-puts "Logs from your program will appear here!"
-puts "############", ARGV, "############"
+docker_command = ARGV[0]
+image_tag = ARGV[1]
+command = ARGV[2]
+command_args = ARGV[3...]
 
-# Uncomment this block to pass the first stage
-#
-# command = ARGV[2]
-# args = ARGV[3..]
-#
-# stdout, stderr, status = Open3.capture3(command, *args)
-#
-# puts stdout
+return if docker_command != 'run'
+
+stdout, stderr, status = Open3.capture3(command, *command_args)
+$stdout.puts stdout
+$stderr.puts stderr
