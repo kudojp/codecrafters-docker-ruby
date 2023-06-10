@@ -1,6 +1,10 @@
-mydocker := docker build -t mydocker . && docker run --cap-add="SYS_ADMIN" mydocker
+mydocker := docker run --cap-add="SYS_ADMIN" mydocker
 
-.PHONNY: run
+.PHONY:build
+build:
+	docker build -t mydocker .
+
+.PHONY: run
 run:
 	$(mydocker) run ubuntu:latest /usr/local/bin/docker-explorer echo hey
 
