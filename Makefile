@@ -1,6 +1,8 @@
-.PHONY: alias
-alias:
-	alias mydocker='docker build -t mydocker . && docker run --cap-add="SYS_ADMIN" mydocker'
+mydocker := docker build -t mydocker . && docker run --cap-add="SYS_ADMIN" mydocker
+
+.PHONNY: run
+run:
+	$(mydocker) run ubuntu:latest /usr/local/bin/docker-explorer echo hey
 
 .PHONY: get-docker-explorers
 get-docker-explorers:
