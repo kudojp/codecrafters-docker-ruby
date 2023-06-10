@@ -11,6 +11,8 @@ if docker_command != 'run'
   exit 1
 end
 
+FileUtils.mkdir_p("/app/root_dir") # This is used as the root directory of the container
+
 FileUtils.mkdir_p("/app/root_dir/usr/local/bin")
 FileUtils.cp("/usr/local/bin/docker-explorer", "/app/root_dir/usr/local/bin/docker-explorer")
 
