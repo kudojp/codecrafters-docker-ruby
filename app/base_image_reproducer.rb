@@ -31,14 +31,24 @@ class BaseImageReproducer
     url = URI("https://#{REGISTRY_HOST}/v2/#{@repo}/manifests/#{@tag}")
     token = get_bearer_token(url)
 
+    ["vnd.docker.distribution.manifest.list.v2+json", "vnd.oci.image.index.v1+json"].each do |accept_media_type|
+      digests_list = fetch_manifest_digests_list(url, token, accept_media_type)
+      return digests_list if digests_list
+    end
+
+    raise StandardError.new("No manifest digests list found.")
+  end
+
+  def fetch_manifest_digests_list(url, token, accept_media_type)
     response = Net::HTTP.start(url.hostname, url.port, use_ssl: true) do |http|
       req = Net::HTTP::Get.new url
       req['Authorization'] = "Bearer #{token}"
-      req["Accept"] = "application/vnd.oci.image.index.v1+json"
+      req["Accept"] = "application/#{accept_media_type}"
       http.request req
     end
 
-    JSON.load(response.body).fetch("manifests")
+    # This could be nil according to the combination of (Image, Accept header).
+    JSON.load(response.body)["manifests"]
   end
 
   # Return value is formatted like:
