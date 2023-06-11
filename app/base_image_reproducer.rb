@@ -15,7 +15,7 @@ class BaseImageReproducer
   end
 
   def reproduce!
-    # TODO: Support other architectures. This assumes that the host machine uses "amd" architecture.
+    # TODO: Support other (architecture, os).
     amd_manifest_digest = self.manifest_digest("amd64", "linux")
     self.layer_digests_list(amd_manifest_digest).each do |layer_digest|
       reproduce_layer!(layer_digest)
@@ -91,7 +91,7 @@ class BaseImageReproducer
       response = self.redirect_for_image_layer(response['location'], response['location'])
     end
 
-    base_layer_file = "base_layer.tar.gz" # Assume that the same named file does not exist in the target directory.
+    base_layer_file = "base_layer.tar.gz" # Assumes that the same named file does not exist in the target directory.
     File.open("#{@target_dir}/#{base_layer_file}", "w") do |f|
       f.write(response.body)
     end

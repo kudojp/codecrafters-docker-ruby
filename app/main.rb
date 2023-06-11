@@ -9,9 +9,10 @@ command_line = ARGV[2...]
 repo, tag = image_tag.split(":", 2)
 tag ||= "latest"
 
+# This is used as the root directory of the container
 root_dir = "/app/root_dir"
 
-FileUtils.mkdir_p(root_dir) # This is used as the root directory of the container
+FileUtils.mkdir_p(root_dir)
 BaseImageReproducer.new(repo, tag, root_dir).reproduce!
 
 if docker_command != 'run'
