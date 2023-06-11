@@ -16,30 +16,36 @@ class BaseImageReproducer
 
   def reproduce!
     # TODO: Support other architectures. This assumes that the host machine uses "amd" architecture.
-    amd_manifest_digest = self.manifest_digests_list.find{|manifest| manifest["architecture"] = "amd64"}["digest"]
+    amd_manifest_digest = self.manifest_digest("amd64", "linux")
     self.layer_digests_list(amd_manifest_digest).each do |layer_digest|
-      reproduce_layer!(layer_digest["digest"])
+      reproduce_layer!(layer_digest)
     end
   end
 
   private
 
-  # Return value is the list of digests and is formatted like:
-  # [{"digest":"sha256:2fdb1cf4995abb74c035e5f520c0f3a46f12b3377a59e86ecca66d8606ad64f9","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"amd64","os":"linux"},"size":424},{"digest":"sha256:c80ed91cdc47229010c4f34f96c3442bc02dca260d0bf26f6c4b047ea7d11cf2","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"arm","os":"linux","variant":"v7"},"size":424},{"digest":"sha256:77bdd217935d10f0e753ed84118e9b11d3ab0a66a82bdf322087354ccd833733","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"arm64","os":"linux","variant":"v8"},"size":424},{"digest":"sha256:268686ba2c6284461cae1642d9d055e51b16f8e711d49b34638146b78050f5a0","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"ppc64le","os":"linux"},"size":424},{"digest":"sha256:b0b966f885ea29d809d03d027c3d21182676380b241c3a271aa83f8e9d7bac06","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"s390x","os":"linux"},"size":424}]
-  def manifest_digests_list()
+  # Return value is a digest string
+  def manifest_digest(architecture, os)
     # ref. https://docs.docker.com/registry/spec/api/#pulling-an-image-manifest
     url = URI("https://#{REGISTRY_HOST}/v2/#{@repo}/manifests/#{@tag}")
     token = get_bearer_token(url)
 
     ["vnd.docker.distribution.manifest.list.v2+json", "vnd.oci.image.index.v1+json"].each do |accept_media_type|
-      digests_list = fetch_manifest_digests_list(url, token, accept_media_type)
-      return digests_list if digests_list
+      manifest_digests_list = manifest_digests_list(url, token, accept_media_type)
+      next unless manifest_digests_list
+      manifest = manifest_digests_list.find do |manifest|
+        platform = manifest.fetch("platform")
+        platform.fetch("architecture") == architecture && platform.fetch("os") == os
+      end
+      return manifest.fetch("digest")
     end
 
     raise StandardError.new("No manifest digests list found.")
   end
 
-  def fetch_manifest_digests_list(url, token, accept_media_type)
+  # Return value is nil or a list of digests formatted as:
+  # [{"digest":"sha256:2fdb1cf4995abb74c035e5f520c0f3a46f12b3377a59e86ecca66d8606ad64f9","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"amd64","os":"linux"},"size":424},{"digest":"sha256:c80ed91cdc47229010c4f34f96c3442bc02dca260d0bf26f6c4b047ea7d11cf2","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"arm","os":"linux","variant":"v7"},"size":424},{"digest":"sha256:77bdd217935d10f0e753ed84118e9b11d3ab0a66a82bdf322087354ccd833733","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"arm64","os":"linux","variant":"v8"},"size":424},{"digest":"sha256:268686ba2c6284461cae1642d9d055e51b16f8e711d49b34638146b78050f5a0","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"ppc64le","os":"linux"},"size":424},{"digest":"sha256:b0b966f885ea29d809d03d027c3d21182676380b241c3a271aa83f8e9d7bac06","mediaType":"application/vnd.oci.image.manifest.v1+json","platform":{"architecture":"s390x","os":"linux"},"size":424}]
+  def manifest_digests_list(url, token, accept_media_type)
     response = Net::HTTP.start(url.hostname, url.port, use_ssl: true) do |http|
       req = Net::HTTP::Get.new url
       req['Authorization'] = "Bearer #{token}"
@@ -51,8 +57,7 @@ class BaseImageReproducer
     JSON.load(response.body)["manifests"]
   end
 
-  # Return value is formatted like:
-  # [{"mediaType"=>"application/vnd.oci.image.layer.v1.tar+gzip", "size"=>29534702, "digest"=>"sha256:837dd4791cdc6f670708c3a570b72169263806d7ccc2783173b9e88f94878271"}]
+  # Return value is a list of digest strings.
   def layer_digests_list(manifest_digest)
     # ref. https://docs.docker.com/registry/spec/api/#pulling-an-image-manifest
     url = URI("https://#{REGISTRY_HOST}/v2/#{@repo}/manifests/#{manifest_digest}")
@@ -65,7 +70,9 @@ class BaseImageReproducer
       http.request req
     end
 
-    JSON.load(response.body).fetch("layers")
+    # This is formatted like: [{"mediaType"=>"application/vnd.oci.image.layer.v1.tar+gzip", "size"=>29534702, "digest"=>"sha256:837dd4791cdc6f670708c3a570b72169263806d7ccc2783173b9e88f94878271"}]
+    layers = JSON.load(response.body).fetch("layers")
+    layers.map{|layer| layer.fetch("digest")}
   end
 
   def reproduce_layer!(layer_digest)
