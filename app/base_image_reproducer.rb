@@ -5,13 +5,13 @@ class BaseImageReproducer
   REGISTRY_HOST = "registry.hub.docker.com".freeze
   OFFICIAL_LIBRARY_REPOS = ["ubuntu", "alpine", "busybox"].freeze
 
-  # root_dir (path in the host machine) will be the root directory of the running container.
-  def initialize(repo, tag, root_dir)
+  # target_dir (path in the host machine) will be the root directory of the running container.
+  def initialize(repo, tag, target_dir)
     repo = "library/#{repo}" if OFFICIAL_LIBRARY_REPOS.include? repo
 
     @repo = repo
     @tag = tag
-    @root_dir = root_dir
+    @target_dir = target_dir
   end
 
   def reproduce!
@@ -75,14 +75,11 @@ class BaseImageReproducer
     end
 
     base_layer_file = "base_layer.tar.gz"
-
-    # tar_file_place = "#{@root_dir}/base_layer.tar.gz"
-
-    File.open("#{@root_dir}/#{base_layer_file}", "w") do |f|
+    File.open("#{@target_dir}/#{base_layer_file}", "w") do |f|
       f.write(response.body)
     end
 
-    stdout, stderr, status = Open3.capture3("tar xvzf #{@root_dir}/#{base_layer_file} -C #{@root_dir}")
+    stdout, stderr, status = Open3.capture3("tar xvzf #{@target_dir}/#{base_layer_file} -C #{@target_dir}")
   end
 
   def redirect_for_image_layer(url, redirect_limit=5)
