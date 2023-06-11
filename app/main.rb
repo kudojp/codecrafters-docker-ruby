@@ -5,7 +5,6 @@ require "./app/base_image_reproducer"
 docker_command = ARGV[0]
 image_tag = ARGV[1]
 command_line = ARGV[2...]
-# command_line[0] is assumed to be `/usr/local/bin/docker-explorer`
 
 repo, tag = image_tag.split(":", 2)
 tag ||= "latest"
@@ -19,7 +18,6 @@ if docker_command != 'run'
   $stderr.puts "Currently only 'mydocker run' is supported"
   exit 1
 end
-
 
 FileUtils.mkdir_p("/app/root_dir/usr/local/bin")
 FileUtils.cp("/usr/local/bin/docker-explorer", "/app/root_dir/usr/local/bin/docker-explorer")
