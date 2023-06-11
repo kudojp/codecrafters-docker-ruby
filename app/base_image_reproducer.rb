@@ -89,7 +89,9 @@ class BaseImageReproducer
       f.write(response.body)
     end
 
-    stdout, stderr, status = Open3.capture3("tar xvzf #{@target_dir}/#{base_layer_file} -C #{@target_dir}")
+    _stdout, stderr, status = Open3.capture3("tar xvzf #{@target_dir}/#{base_layer_file} -C #{@target_dir} && rm #{@target_dir}/#{base_layer_file}")
+    $stderr.puts stderr
+    raise StandardError.new("Failed to reproduce base files.") unless status.success?
   end
 
   def redirect_for_image_layer(url, redirect_limit=5)
