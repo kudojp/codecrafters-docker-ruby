@@ -30,6 +30,9 @@ class BaseImageReproducer
     url = URI("https://#{REGISTRY_HOST}/v2/#{@repo}/manifests/#{@tag}")
     token = get_bearer_token(url)
 
+    # As of June 2023, 
+    # With "vnd.docker.distribution.manifest.list.v2+json" media-type -> "alpine:latest" and "busybox:latest" returns the manifests list, but "ubuntu:latest" does not.
+    # With "vnd.oci.image.index.v1+json" media-type                   -> "ubuntu:latest" returns the manifests list, but "alpine:latest" and "busybox:latest" do not.
     ["vnd.docker.distribution.manifest.list.v2+json", "vnd.oci.image.index.v1+json"].each do |accept_media_type|
       manifest_digests_list = manifest_digests_list(url, token, accept_media_type)
       next unless manifest_digests_list
@@ -107,7 +110,7 @@ class BaseImageReproducer
 
     response = Net::HTTP.start(url.hostname, url.port, use_ssl: true) do |http|
       req = Net::HTTP::Get.new url
-      # Seems like Authorization and Accept headers is not necessary when redirection.
+      # Seems like "Authorization" and "Accept" headers are not necessary when redirection.
       http.request req
     end
 
@@ -125,7 +128,7 @@ class BaseImageReproducer
     service = service.split("=")[1][1...][...-1]    # "registry.docker.io"
     scope = scope.split("=")[1][1...][...-1]        # e.g. "repository:library/ubuntu:pull"
 
-    auth_url = "#{realm}?service=#{URI.encode_www_form_component(service)}&scope=#{URI.encode_www_form_component(scope)}" # "https://hub.docker.com/v2/library/ubuntu/tags/list"
+    auth_url = "#{realm}?service=#{URI.encode_www_form_component(service)}&scope=#{URI.encode_www_form_component(scope)}"
     response = Net::HTTP.get_response(URI.parse(auth_url))
     token = JSON.parse(response.body)["token"]
     token
